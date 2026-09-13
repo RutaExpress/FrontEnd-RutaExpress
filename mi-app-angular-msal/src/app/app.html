@@ -1,0 +1,8 @@
+@if (msalReady) {
+  <app-navbar></app-navbar>
+  <router-outlet></router-outlet>
+} @else {
+  <div style="display: flex; justify-content: center; padding: 50px; font-family: sans-serif;">
+    <h3>Cargando sistema de seguridad...</h3>
+  </div>
+}
