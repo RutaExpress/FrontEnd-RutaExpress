@@ -26,7 +26,7 @@ export function MSALInstanceFactory(): IPublicClientApplication {
     auth: {
       clientId: environment.azure.clientId,
       authority: `https://login.microsoftonline.com/${environment.azure.tenantId}`,
-      redirectUri: environment.azure.redirectUri
+      redirectUri: window.location.origin
       // ELIMINADO: navigateToLoginRequestUrl: true
     },
     cache: {
@@ -41,7 +41,7 @@ export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
  
   // Le decimos que intercepte cualquier petición a http://localhost:8082/api/ 
   // y le inyecte los scopes definidos en tu environment.
-  protectedResourceMap.set('http://localhost:8082/api/*', environment.azure.scopes);
+  protectedResourceMap.set('/api/*', environment.azure.scopes);
 
   return {
     interactionType: InteractionType.Redirect,
