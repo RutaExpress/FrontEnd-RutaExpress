@@ -2,7 +2,12 @@
   <app-navbar></app-navbar>
   <router-outlet></router-outlet>
 } @else {
-  <div style="display: flex; justify-content: center; padding: 50px; font-family: sans-serif;">
-    <h3>Cargando sistema de seguridad...</h3>
+  <div class="d-flex justify-content-center align-items-center vh-100 bg-light">
+    <div class="text-center">
+      <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <h5 class="text-muted">Cargando sistema de seguridad...</h5>
+    </div>
   </div>
 }
