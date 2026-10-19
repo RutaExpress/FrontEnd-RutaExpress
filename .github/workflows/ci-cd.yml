@@ -2,7 +2,7 @@ name: RutaExpress Frontend CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main", "master", "develop" ]
+    branches: [ "main", "master", "develop", "feature/*" ]
     paths-ignore:
       - '**.md'
       - 'docs/**'
@@ -11,9 +11,6 @@ on:
       - 'LICENSE'
   pull_request:
     branches: [ "main", "master" ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
 
 jobs:
   build-and-test:
@@ -27,10 +24,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: ./mi-app-angular-msal/package-lock.json
 
@@ -41,7 +38,7 @@ jobs:
         run: npm run build -- --configuration=production
 
   docker-build:
-    name: Build and Push Docker Image to AWS ECR
+    name: Build Docker Image (Localmente en CI)
     needs: build-and-test
     runs-on: ubuntu-latest
     defaults:
@@ -52,23 +49,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
-
-      - name: Log in to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: rutaexpress-frontend
-          IMAGE_TAG: latest
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      - name: Build Docker Image
+        # Construimos la imagen para verificar que el Dockerfile esté bien, 
+        # pero NO la subimos a ningún lado (tal como pide el PDF)
+        run: docker build -t rutaexpress-front:test .
