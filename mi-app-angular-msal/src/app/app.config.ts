@@ -1,47 +1,41 @@
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { routes } from './app.routes';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { routes } from './app.routes';
 import { 
-  MsalBroadcastService, 
-  MsalGuard, 
-  MsalGuardConfiguration, 
   MsalInterceptor, 
   MsalInterceptorConfiguration, 
-  MsalService, 
-  MSAL_GUARD_CONFIG, 
   MSAL_INSTANCE, 
-  MSAL_INTERCEPTOR_CONFIG 
+  MSAL_INTERCEPTOR_CONFIG, 
+  MSAL_GUARD_CONFIG, 
+  MsalGuardConfiguration,
+  MsalService,
+  MsalGuard,
+  MsalBroadcastService
 } from '@azure/msal-angular';
-import { 
-  BrowserCacheLocation, 
-  IPublicClientApplication, 
-  InteractionType, 
-  PublicClientApplication 
-} from '@azure/msal-browser';
+import { PublicClientApplication, InteractionType } from '@azure/msal-browser';
 import { environment } from '../environments/environment';
 
-export function MSALInstanceFactory(): IPublicClientApplication {
+// IMPORTANTE: Verifica que esta ruta sea exacta (con el ./ adelante)
+import { ErrorInterceptor } from './interceptor/error.interceptor'; 
+
+// 1. Instancia de MSAL
+export function MSALInstanceFactory(): PublicClientApplication {
   return new PublicClientApplication({
     auth: {
       clientId: environment.azure.clientId,
-      authority: `https://login.microsoftonline.com/${environment.azure.tenantId}`,
-      redirectUri: window.location.origin
-      // ELIMINADO: navigateToLoginRequestUrl: true
-    },
-    cache: {
-      cacheLocation: BrowserCacheLocation.LocalStorage
+      authority: environment.azure.authority,
+      redirectUri: window.location.origin,
     }
   });
 }
 
+// 2. Configuración del Interceptor
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
   
- 
-  // Le decimos que intercepte cualquier petición a http://localhost:8082/api/ 
-  // y le inyecte los scopes definidos en tu environment.
-  protectedResourceMap.set('/api/*', environment.azure.scopes);
+  protectedResourceMap.set(`${environment.apiUrl}/api/v1/shipments*`, environment.azure.scopes);
+  protectedResourceMap.set(`${environment.apiUrl}/api/v1/me`, environment.azure.scopes);
 
   return {
     interactionType: InteractionType.Redirect,
@@ -49,6 +43,7 @@ export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   };
 }
 
+// 3. Configuración del Guard
 export function MSALGuardConfigFactory(): MsalGuardConfiguration {
   return {
     interactionType: InteractionType.Redirect,
@@ -67,9 +62,24 @@ export const appConfig: ApplicationConfig = {
       useClass: MsalInterceptor,
       multi: true
     },
-    { provide: MSAL_INSTANCE, useFactory: MSALInstanceFactory },
-    { provide: MSAL_GUARD_CONFIG, useFactory: MSALGuardConfigFactory },
-    { provide: MSAL_INTERCEPTOR_CONFIG, useFactory: MSALInterceptorConfigFactory },
+    {
+      // AQUI ESTA EL INTERCEPTOR DE ERRORES
+      provide: HTTP_INTERCEPTORS,
+      useClass: ErrorInterceptor, 
+      multi: true
+    },
+    {
+      provide: MSAL_INSTANCE,
+      useFactory: MSALInstanceFactory
+    },
+    {
+      provide: MSAL_INTERCEPTOR_CONFIG,
+      useFactory: MSALInterceptorConfigFactory
+    },
+    {
+      provide: MSAL_GUARD_CONFIG,
+      useFactory: MSALGuardConfigFactory
+    },
     MsalService,
     MsalGuard,
     MsalBroadcastService
